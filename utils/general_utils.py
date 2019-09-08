@@ -35,3 +35,32 @@ def paths_to_tensor(img_paths):
     list_of_tensors = [path_to_tensor(img_path) for img_path in tqdm(img_paths)]
     return np.vstack(list_of_tensors)
 
+def run_prediction(model, image_generator, steps):
+    # for use later, let's get the entire dictionary of data labels 
+    #  looks like: 
+    #     {'bass': 0, 'brass': 1, 'flute': 2, 'guitar': 3, 'keyboard': 4, 'mallet': 5, 
+    #      'organ': 6, 'reed': 7, 'string': 8, 'vocal': 9}
+    data_class_indices = image_generator.class_indices
+    
+    # reverse the dictionary so the keys are the values and the values are the kees so 
+    #   we can look up label names by label number
+    data_labels_dict = dict((f,i) for i, f in data_class_indices.items())
+
+    # Run the test prediction
+    ## each record returned from predict_generator contains the predictions for each lable for one sound
+    ## looks like: [0.06944881 0.01173394 0.11198635 0.05482391 0.04346911 0.11438505 
+    ##              0.06325968 0.02916289 0.00357502 0.49815515]
+    test_scores_trained = model.predict_generator(image_generator, steps=steps)
+
+    # to get results, we'll get the original y labels and the predicted y labels and compare them
+
+    #### first get the predicted labels
+    ## get the label index (translating from lists of probabilities using argmax)
+    test_y_pred = np.argmax(test_scores_trained, axis=1)
+
+    #### now get the original y labels from the ImageGenerator
+    test_y_labels = np.array([l for l in image_generator.labels])
+
+    # calculate the results!
+    return test_y_labels == test_y_pred
+    
