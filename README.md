@@ -2,6 +2,9 @@
 
 Goal: Use the NSynth Dataset by Google Inc. data to train a deep neural net to label the instrument playing a single note at any pitch or velocity.
 
+## Status: 
+This project is the first iteration of a Udacity Capstone Project. It is not complete and the best model tested predicts the instrument family of audio samples twice as well as random.
+
 ## Files:
 - identify_instrument.ipynb: The main Jupyter notebook.
 - models.py: Various versions (numbered) of the DNN models.
