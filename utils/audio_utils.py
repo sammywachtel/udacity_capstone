@@ -56,7 +56,8 @@ def create_spectrogram_parallelized(audio, sample_rate, audioname, directory,
 def create_spectrogram_parallelized_callback(ret):
     if ret[0]%50 == 0:
         print('\rprocessed {} files out of {} in {} batches'.format(ret[0], ret[2], ret[1]), end="")
-    
+
+
 def write_spectograms_parallelized(tfrecord_file_name, directory, batch_size = 50):
     num_tfrecords = general_utils.get_tfrecord_count(tfrecord_file_name)
 
@@ -75,19 +76,16 @@ def write_spectograms_parallelized(tfrecord_file_name, directory, batch_size = 5
             parse_func = lambda example_proto: tf.parse_single_example(example_proto, feats)
             dataset = dataset.map(parse_func)
 
-            #tried to filter the set, but it failed... gave up for now
-            #dataset = dataset.filter(lambda x: 'keyboard' in x['note_str'])
+            #set to different number to take fewer samples for testing
+            num_samples = num_tfrecords #50 
             
-            num_samples = num_tfrecords #50 #set to not take all samples
-            
+            # no need to shuffle as we are only generating images
             #dataset = dataset.shuffle(buffer_size=num_tfrecords).take(num_samples)
-            
             dataset = dataset.batch(batch_size=batch_size)
             itr = dataset.make_one_shot_iterator()
 
             batch_itr = itr.get_next()
-            
-                
+                        
             #loop through all batches
             for batch_num in range(math.ceil(num_samples/batch_size)):
                 # sess.run returns a dict

@@ -64,3 +64,26 @@ def run_prediction(model, image_generator, steps):
     # calculate the results!
     return test_y_labels == test_y_pred
     
+def list_data_in_tfrecord(tfrecord_file, num_records_to_list=1):
+    tf.enable_eager_execution()
+
+    #testData = tf.data.TFRecordDataset("data/nsynth-test.tfrecord")
+    res = tf.python_io.tf_record_iterator(tfrecord_file)
+
+    i = 0
+    for e in res:
+        print("\nRECORD ", i+1, "\n")
+        e = tf.train.Example.FromString(e)
+        d = dict(e.features.feature)
+        keys = d.keys()
+        for key in keys:
+            if key == 'audio':
+                print(key)
+                print('omitted\n')
+            else:
+                print(key)
+                print (d.get(key))
+
+        i += 1
+        if i > num_records_to_list-1:
+            break

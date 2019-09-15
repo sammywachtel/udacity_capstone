@@ -110,3 +110,4 @@ venv.bak/
 # example files
 examples
 data
+saved_models
