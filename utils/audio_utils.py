@@ -23,11 +23,11 @@ def play_wav(wf):
         stream.write(data)
         data = wf.readframes(chunk)
 
-def graph_wav(wave_data, wav_name, wav_num):
+def graph_wav(wave_data, wav_name):
     fig, axs = plt.subplots(1, 1, figsize=(10, 2))
     print('plotting...')
     axs.plot(wave_data);
-    axs.set_title('Audio Signal for image {}: {}'.format(wav_num, wav_name))
+    axs.set_title('Audio Signal for image: {}'.format(wav_name))
     #axs[1].plot(encoding[0]);
     #axs[1].set_title('NSynth Encoding')
     plt.show()
@@ -104,5 +104,37 @@ def write_spectograms_parallelized(tfrecord_file_name, directory, batch_size = 5
                 pool.close()
                 pool.join()
             
-def test_func(note_str, audio, batch_num, batch_size, num_samples):
-    print(note_str, audio, batch_num, batch_size, num_samples)
+def get_audio_sample_by_name_from_tfrecord(note_str, tfrecord_file_name='data/nsynth-test.tfrecord'):
+    num_records = general_utils.get_tfrecord_count(tfrecord_file_name)
+    with tf.Graph().as_default():
+        with tf.Session() as sess:
+            # Read data
+            dataset = tf.data.TFRecordDataset(tfrecord_file_name)
+
+            # make the tensor structure
+            feats = {
+                "note_str": tf.FixedLenFeature([], dtype=tf.string),
+                "audio": tf.FixedLenFeature([64000], dtype=tf.float32)
+            }
+
+            parse_func = lambda example_proto: tf.parse_single_example(example_proto, feats)
+            dataset = dataset.map(parse_func)
+
+            # need to do this in batches as tfrecords are streamed
+            batch_size = 1
+            dataset = dataset.batch(batch_size=batch_size)
+            itr = dataset.make_one_shot_iterator()
+
+            batch = itr.get_next()
+            
+            #loop through all batches
+            for i in range(num_records):
+                ret = sess.run(batch)
+                note_string_name = ret['note_str'][0].decode('utf-8')
+                if note_string_name == note_str:
+                    print('found the file: ', note_string_name)
+                    return ret['audio'][0]
+                
+                    
+                    
+                    
