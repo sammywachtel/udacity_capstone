@@ -4,9 +4,29 @@ from sklearn.datasets import load_files
 from keras.utils import np_utils
 import tensorflow as tf
 import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.image as mpimg
 from keras.preprocessing import image as kimage                  
 from tqdm import tqdm
+from utils import general_utils
 
+
+feats = {
+    "note_str": tf.FixedLenFeature([], dtype=tf.string),
+    "sample_rate": tf.FixedLenFeature([], dtype=tf.int64),
+    "instrument_source": tf.FixedLenFeature([1], dtype=tf.int64),
+    "qualities": tf.FixedLenFeature([10], dtype=tf.int64),
+    "instrument_source_str": tf.FixedLenFeature([], dtype=tf.string),
+    "audio": tf.FixedLenFeature([64000], dtype=tf.float32),
+    "instrument": tf.FixedLenFeature([], dtype=tf.int64),
+    #"qualities_str": tf.FixedLenFeature([], dtype=tf.string),
+    "note":tf.FixedLenFeature([1], dtype=tf.int64),
+    "instrument_str": tf.FixedLenFeature([], dtype=tf.string),
+    "instrument_family_str": tf.FixedLenFeature([], dtype=tf.string),
+    "velocity": tf.FixedLenFeature([1], dtype=tf.int64),
+    "pitch": tf.FixedLenFeature([1], dtype=tf.int64),
+    "instrument_family": tf.FixedLenFeature([1], dtype=tf.int64)
+}
 
 def get_tfrecord_count(tfrecord_dataset):
     num_records = 0
@@ -87,3 +107,33 @@ def list_data_in_tfrecord(tfrecord_file, num_records_to_list=1):
         i += 1
         if i > num_records_to_list-1:
             break
+
+def get_data_from_tfrecord_by_note_str(note_str, tfrecord_file_name='data/nsynth-test.tfrecord'):
+    num_records = general_utils.get_tfrecord_count(tfrecord_file_name)
+    with tf.Graph().as_default():
+        with tf.Session() as sess:
+            # Read data
+            dataset = tf.data.TFRecordDataset(tfrecord_file_name)
+
+            parse_func = lambda example_proto: tf.parse_single_example(example_proto, feats)
+            dataset = dataset.map(parse_func)
+
+            # need to do this in batches as tfrecords are streamed
+            batch_size = 1
+            dataset = dataset.batch(batch_size=batch_size)
+            itr = dataset.make_one_shot_iterator()
+
+            batch = itr.get_next()
+            
+            #loop through all batches
+            for i in range(num_records):
+                ret = sess.run(batch)
+                note_string_name = ret['note_str'][0].decode('utf-8')
+                if note_string_name == note_str:
+                    print('found the file: ', note_string_name)
+                    return ret
+
+def display_image(image_path):
+    image = mpimg.imread(image_path)
+    imgplot = plt.imshow(image)
+    plt.show()
