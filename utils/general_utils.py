@@ -134,6 +134,7 @@ def get_data_from_tfrecord_by_note_str(note_str, tfrecord_file_name='data/nsynth
                     return ret
 
 def display_image(image_path):
+    plt.axis('off')
     image = mpimg.imread(image_path)
     imgplot = plt.imshow(image)
     plt.show()
