@@ -57,30 +57,6 @@ def graph_time_stft(wave_data, wav_name, sample_rate):
 #    db = librosa.amplitude_to_db(data, ref=np.max)
 #    librosa.display.specshow(db, sr=sample_rate, hop_length=hop_length, x_axis='time', y_axis='hz')
 #    plt.colorbar(format='%+2.0f dB')
-
-def create_spectrogram(wave_data, wav_name, sample_rate, mel=False, spect_only=False, figsize=[5,4]):
-    fig, axs = plt.subplots(1, 1, figsize=figsize)
-    
-    if mel:
-        spect_type = 'Mel Spectrogram'
-        spect = librosa.feature.melspectrogram(y=wave_data, sr=sample_rate)
-        db = librosa.power_to_db(spect, ref=np.max)
-    else:
-        spect_type = 'Spectrogram'
-        #spect = np.abs(librosa.stft(wave_data))
-        spect = np.abs(librosa.stft(wave_data, hop_length=512))
-        db = librosa.amplitude_to_db(spect, ref=np.max)
-    
-    if spect_only:
-        plt.axis('off')
-        axs.set_frame_on(False)
-        librosa.display.specshow(db, sr=sample_rate, x_axis='time', y_axis='hz')
-    else:
-        axs.set_title('{} for: {}'.format(spect_type,wav_name))
-        librosa.display.specshow(db, sr=sample_rate, x_axis='time', y_axis='hz')
-        plt.colorbar(format='%+2.0f dB')
-    
-    return plt
     
 def create_mel_to_hz_plot(sample_rate):
     hop_length = 512
@@ -112,14 +88,64 @@ def create_spectrogram_parallelized(audio, sample_rate, audioname, directory,
     if not os.path.exists(subdirectory):
         os.makedirs(subdirectory)
         
-    plt = create_spectrogram(audio, audioname, sample_rate, mel=mel, spect_only=True, figsize=[0.72,0.72])
-    plt.savefig(filename, dpi=400, bbox_inches='tight',pad_inches=0)
+    plt = create_spectrogram(audio, audioname, sample_rate, mel=mel, spect_only=True, figsize=(0.72,0.72))
+    plt.savefig(filename, dpi=400, bbox_inches='tight', pad_inches=0)
     plt.close()    
-    #fig.clf()
-    #plt.close(fig)
-    #plt.close('all')
     del plt
     return ret_val
+
+
+def create_spectrogram(wave_data, wav_name, sample_rate, mel=False, spect_only=False, figsize=(5,4)):
+    fig = plt.figure(figsize=figsize)
+    axs = fig.add_subplot(111)
+    
+    if mel:
+        spect_type = 'Mel Spectrogram'
+        spect = librosa.feature.melspectrogram(y=wave_data, sr=sample_rate)
+        db = librosa.power_to_db(spect, ref=np.max)
+    else:
+        spect_type = 'Spectrogram'
+        #spect = np.abs(librosa.stft(wave_data))
+        spect = np.abs(librosa.stft(wave_data, hop_length=512))
+        db = librosa.amplitude_to_db(spect, ref=np.max)
+    
+    if spect_only:
+        plt.axis('off')
+        axs.axes.get_xaxis().set_visible(False)
+        axs.axes.get_yaxis().set_visible(False)
+        axs.set_frame_on(False)
+        librosa.display.specshow(db, sr=sample_rate, x_axis='time', y_axis='hz')
+    else:
+        axs.set_title('{} for: {}'.format(spect_type,wav_name))
+        librosa.display.specshow(db, sr=sample_rate, x_axis='time', y_axis='hz')
+        plt.colorbar(format='%+2.0f dB')
+    
+    return plt
+
+def create_spectrogram_parallelized1(audio, sample_rate, audioname, directory,
+                                    batch_num, batch_i_num, batch_size, num_samples):
+    fig = plt.figure(figsize=[0.72,0.72])
+    ax = fig.add_subplot(111)
+    ax.axes.get_xaxis().set_visible(False)
+    ax.axes.get_yaxis().set_visible(False)
+    ax.set_frame_on(False)
+    spect = librosa.feature.melspectrogram(y=audio, sr=sample_rate)
+    librosa.display.specshow(librosa.power_to_db(spect, ref=np.max))
+    #plt.colorbar(format='%+2.0f dB')
+    #plt.title('Mel Spectrogram')
+    
+    plt = create_spectrogram(audio, audioname, sample_rate, mel=mel, spect_only=True, figsize=(0.72,0.72))
+    plt.savefig(filename, dpi=400, bbox_inches='tight', pad_inches=0)
+    plt.close()    
+    
+    filename  = directory + '/' + audioname + '.jpg'
+    plt.savefig(filename, dpi=400, bbox_inches='tight', pad_inches=0)
+    plt.close()    
+    fig.clf()
+    plt.close(fig)
+    plt.close('all')
+    del filename,fig,ax,spect
+    return batch_num * batch_size + batch_i_num+1, batch_num, num_samples
 
 def create_spectrogram_parallelized_callback(ret):
     if ret[0]%50 == 0 or ret[0] == ret[2]:

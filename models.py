@@ -297,7 +297,19 @@ def create_model_v6(show_summary=False):
     return model
 
 ## V7 results (UNTRAINED) with
-## TODO
+## Loss:  1.0031691053882241  Accuracy:  0.037597656
+## Total test records: 4096
+## Number of correct: 226
+## Percent correct: 0.05517578125
+
+## V7 results (weights.best.v7_1.hdf5) with:
+### train shape (283704, 3)
+### valid shape (12678, 3)
+### test shape (4096, 3)
+## Loss:  1.0000030007213354  Accuracy:  0.034423828
+## Total test records: 4096
+## Number of correct: 141
+## Percent correct: 0.034423828125
 ######
 def create_model_v7(show_summary=False):
     model = Sequential()
