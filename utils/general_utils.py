@@ -2,15 +2,15 @@ import warnings
 warnings.filterwarnings('ignore')
 from sklearn.datasets import load_files
 from keras.utils import np_utils
+from keras.preprocessing import image as kimage                  
+from tqdm import tqdm
+from utils import general_utils
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
-from keras.preprocessing import image as kimage                  
-from tqdm import tqdm
-from utils import general_utils
 
-
+# The feature dictionary for the NSynth libarary dataset
 feats = {
     "note_str": tf.FixedLenFeature([], dtype=tf.string),
     "sample_rate": tf.FixedLenFeature([], dtype=tf.int64),
@@ -35,6 +35,25 @@ def get_tfrecord_count(tfrecord_dataset):
         
     return num_records
 
+def get_tfdataset_count(dataset):
+    d = dataset.batch(batch_size=50)
+    itr = d.make_one_shot_iterator()
+    batch_itr = itr.get_next()
+    with tf.Session() as sess:
+        num_records = 0
+        #loop through all batches
+        while True:
+            try:
+                # sess.run returns a dict
+                batch = sess.run(batch_itr)
+            except tf.errors.OutOfRangeError:
+                break
+
+            for i in batch['note_str']:
+                num_records += 1
+                
+    return num_records
+
 def load_dataset(path):
     data = load_files(path, shuffle=True, load_content=False)
     files = np.array(data['filenames'])
@@ -56,6 +75,9 @@ def paths_to_tensor(img_paths):
     return np.vstack(list_of_tensors)
 
 def run_prediction(model, image_generator, steps):
+    #reset the image generator first
+    image_generator.reset()
+    
     # for use later, let's get the entire dictionary of data labels 
     #  looks like: 
     #     {'bass': 0, 'brass': 1, 'flute': 2, 'guitar': 3, 'keyboard': 4, 'mallet': 5, 
@@ -82,7 +104,8 @@ def run_prediction(model, image_generator, steps):
     test_y_labels = np.array([l for l in image_generator.labels])
 
     # calculate the results!
-    return test_y_labels == test_y_pred
+    #return test_y_labels == test_y_pred
+    return np.equal(test_y_labels, test_y_pred)
     
 def list_data_in_tfrecord(tfrecord_file, num_records_to_list=1):
     tf.enable_eager_execution()

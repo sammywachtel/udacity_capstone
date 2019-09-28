@@ -1,5 +1,4 @@
-# Inspired by https://medium.com/gradientcrescent/urban-sound-classification-using-convolutional-neural-networks-with-keras-theory-and-486e92785df4
-import tensorflow as tf
+# Initial model inspired by https://medium.com/gradientcrescent/urban-sound-classification-using-convolutional-neural-networks-with-keras-theory-and-486e92785df4
 from tensorflow import keras
 from tensorflow.keras.layers import Dense, Activation, Flatten, Dropout, BatchNormalization
 from tensorflow.keras.models import Sequential, Model
@@ -7,6 +6,7 @@ from tensorflow.keras.layers import Conv2D, MaxPooling2D
 from tensorflow.keras import regularizers, optimizers
 import pandas as pd
 import numpy as np
+import tensorflow as tf
 
 ## V1 results (UNTRAINED) with
 ### test shape (4096, 3)
@@ -339,6 +339,119 @@ def create_model_v7(show_summary=False):
     model.compile(optimizers.Adam(learning_rate=0.0001,beta_1=0.9,beta_2=0.999,
                                   epsilon=1e-07),loss="categorical_hinge",metrics=["accuracy"])
     #sparse_categorical_crossentropy 
+    if show_summary:
+        model.summary()
+    
+    return model
+
+def create_model_v8(show_summary=False):
+    model = Sequential()
+    model.add(Conv2D(32, (3, 3), padding='same',
+                     input_shape=(256,256,3)))
+    model.add(Activation('relu'))
+    #model.add(Conv2D(512, (3, 3)))
+    #model.add(Activation('relu'))
+    #model.add(MaxPooling2D(pool_size=(2, 2)))
+    #model.add(Dropout(0.25))
+    #model.add(Conv2D(256, (3, 3)))
+    #model.add(Activation('relu'))
+    #model.add(MaxPooling2D(pool_size=(2, 2)))
+    #model.add(Dropout(0.25))
+    model.add(Conv2D(128, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Conv2D(128, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(128, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(64, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.5))
+    model.add(Conv2D(128, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(128, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.5))
+    model.add(Flatten())
+    model.add(Dense(512))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(10, activation='softmax'))
+    model.compile(optimizers.RMSprop(lr=0.0005, decay=1e-6),loss="categorical_crossentropy",metrics=["accuracy"])
+    if show_summary:
+        model.summary()
+    
+    return model
+
+def create_model_v9(show_summary=False):
+    model = Sequential()
+    model.add(Conv2D(32, (3, 3), padding='same',
+                     input_shape=(128,128,3)))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.5))
+    model.add(Conv2D(128, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(128, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(128, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.5))
+    model.add(Flatten())
+    model.add(Dense(512))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(10, activation='softmax'))
+    model.compile(optimizers.Adam(learning_rate=0.001,beta_1=0.9,beta_2=0.999,
+                                  epsilon=1e-07),loss="categorical_hinge",metrics=["accuracy"])
+    if show_summary:
+        model.summary()
+    
+    return model
+
+def create_model_v10(show_summary=False):
+    model = Sequential()
+    model.add(Conv2D(32, (3, 3), padding='same',
+                     input_shape=(128,128,3)))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.5))
+    model.add(Conv2D(128, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(128, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(128, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(MaxPooling2D(pool_size=(2, 2)))
+    model.add(Dropout(0.5))
+    model.add(Flatten())
+    model.add(Dense(512))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(10, activation='softmax'))
+    model.compile(optimizers.RMSprop(lr=0.005, decay=1e-6),loss="categorical_crossentropy",metrics=["accuracy"])
+
     if show_summary:
         model.summary()
     
