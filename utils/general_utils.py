@@ -5,10 +5,15 @@ from keras.utils import np_utils
 from keras.preprocessing import image as kimage                  
 from tqdm import tqdm
 from utils import general_utils
+from math import ceil
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.image as mpimg
+import pandas as pd
+import seaborn as sn
+import keras
+
 
 # The feature dictionary for the NSynth libarary dataset
 feats = {
@@ -74,38 +79,44 @@ def paths_to_tensor(img_paths):
     list_of_tensors = [path_to_tensor(img_path) for img_path in tqdm(img_paths)]
     return np.vstack(list_of_tensors)
 
-def run_prediction(model, image_generator, steps):
-    #reset the image generator first
-    image_generator.reset()
-    
+def get_label_dict_from_generator(generator):   
     # for use later, let's get the entire dictionary of data labels 
     #  looks like: 
     #     {'bass': 0, 'brass': 1, 'flute': 2, 'guitar': 3, 'keyboard': 4, 'mallet': 5, 
     #      'organ': 6, 'reed': 7, 'string': 8, 'vocal': 9}
-    data_class_indices = image_generator.class_indices
+    data_class_indices = generator.class_indices
     
     # reverse the dictionary so the keys are the values and the values are the kees so 
     #   we can look up label names by label number
-    data_labels_dict = dict((f,i) for i, f in data_class_indices.items())
+    data_labels_dict = dict((v,k) for k, v in data_class_indices.items())
+    
+    return data_labels_dict
+
+def run_prediction(model, image_generator):
+    #reset the image generator first
+    image_generator.reset()
+
+    data_labels_dict = get_label_dict_from_generator(image_generator)
 
     # Run the test prediction
     ## each record returned from predict_generator contains the predictions for each lable for one sound
     ## looks like: [0.06944881 0.01173394 0.11198635 0.05482391 0.04346911 0.11438505 
     ##              0.06325968 0.02916289 0.00357502 0.49815515]
-    test_scores_trained = model.predict_generator(image_generator, steps=steps)
+    y_pred_res = model.predict_generator(image_generator)
 
     # to get results, we'll get the original y labels and the predicted y labels and compare them
 
     #### first get the predicted labels
     ## get the label index (translating from lists of probabilities using argmax)
-    test_y_pred = np.argmax(test_scores_trained, axis=1)
-
+    y_predicted = np.argmax(y_pred_res, axis=1)
+    
     #### now get the original y labels from the ImageGenerator
-    test_y_labels = np.array([l for l in image_generator.labels])
+    y_actual = np.array([l for l in image_generator.labels])
+    
+    #print('y_actual',len(y_actual),'y_predicted',len(y_predicted))
 
-    # calculate the results!
-    #return test_y_labels == test_y_pred
-    return np.equal(test_y_labels, test_y_pred)
+    # calculate the results! and also return the actual and predicted labels
+    return np.equal(y_actual, y_predicted), y_predicted, y_actual
     
 def list_data_in_tfrecord(tfrecord_file, num_records_to_list=1):
     tf.enable_eager_execution()
@@ -161,3 +172,66 @@ def display_image(image_path):
     image = mpimg.imread(image_path)
     imgplot = plt.imshow(image)
     plt.show()
+    
+def display_confusion(y_predicted, y_actual, labels_dict):
+
+    p = np.vectorize(labels_dict.get)(y_predicted)
+    a = np.vectorize(labels_dict.get)(y_actual)
+    
+    data = {'y_Predicted': p,
+            'y_Actual':    a
+            }
+    
+    df = pd.DataFrame(data, columns=['y_Actual','y_Predicted'])
+    confusion_matrix = pd.crosstab(df['y_Actual'], df['y_Predicted'], rownames=['Actual'], colnames=['Predicted'])
+
+    sn.heatmap(confusion_matrix, annot=True)
+    
+def visualize_model_filters(model, layer_number=1, n_filters=6, size=1):
+    
+    #print(model.layers[0].get_weights())
+    model_layer = model.layers[layer_number]
+    
+    # Return message if this is not a convolutional later.
+    if 'con' not in model_layer.name:
+        print('Layer {} is not a convolutional layer.'.format(layer_number))
+        return
+    
+    filters, biases = model_layer.get_weights()
+    
+    # normalize filter values to 0-1 so we can visualize them
+    f_min, f_max = filters.min(), filters.max()
+    filters = (filters - f_min) / (f_max - f_min)
+    
+    plt.figure(num=None, figsize=(8, 10), dpi=80)
+    
+    n_rows, index = n_filters, 1
+    for i in range(n_filters):
+        f = filters[:, :, :, i]
+        for j in range(3):
+            ax = plt.subplot(n_rows, 3, index)
+            ax.set_xticks([])
+            ax.set_yticks([])
+            plt.imshow(f[:, :, j])
+            index += 1
+    # show the figure
+    plt.show()
+    
+def print_model_conv_layers(model, conv_only=False):
+    i = 0
+    for layer in model.layers:
+        shape = 0,0,0
+        is_con = False
+        if 'con' in layer.name:
+            #continue
+            filters, biases = layer.get_weights()
+            shape = filters.shape
+            is_con = True
+
+        i += 1
+
+        if is_con or not conv_only:
+            print('layer', i-1, layer.name, shape)    
+        
+def clear_keras_sessions():
+    keras.backend.clear_session()

@@ -8,6 +8,11 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 
+# Convolutional layers
+#   Input shape: (samples, channels, rows, cols)
+#   Output shape: (samples, filters, new_rows, new_cols)
+    
+
 ## V1 results (UNTRAINED) with
 ### test shape (4096, 3)
 ## Loss:  2.3066686056554317  Accuracy:  0.11987305
@@ -424,35 +429,224 @@ def create_model_v9(show_summary=False):
     
     return model
 
+# The dense layer output was reduced to 8 because we started using a reduced dataset (only acoustic within the range of C4 and C5). The number of bass and organ samples was too low and have been removed. 
+## NOTE: Always choses the same instrument class!
 def create_model_v10(show_summary=False):
     model = Sequential()
-    model.add(Conv2D(32, (3, 3), padding='same',
-                     input_shape=(128,128,3)))
+    model.add(Conv2D(32, (5, 5), padding='same', input_shape=(64,64,3)))
     model.add(Activation('relu'))
-    model.add(Conv2D(64, (3, 3), padding='same'))
+    model.add(Conv2D(64, (5, 5)))
     model.add(Activation('relu'))
-    model.add(Conv2D(64, (3, 3), padding='same'))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(64, (5, 5), padding='same'))
     model.add(Activation('relu'))
-    model.add(Conv2D(64, (3, 3)))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.5))
-    model.add(Conv2D(128, (3, 3), padding='same'))
+    model.add(Conv2D(128, (5, 5), padding='same'))
     model.add(Activation('relu'))
-    model.add(Conv2D(128, (3, 3), padding='same'))
-    model.add(Activation('relu'))
-    model.add(Conv2D(128, (3, 3)))
-    model.add(Activation('relu'))
-    model.add(MaxPooling2D(pool_size=(2, 2)))
     model.add(Dropout(0.5))
     model.add(Flatten())
     model.add(Dense(512))
     model.add(Activation('relu'))
     model.add(Dropout(0.5))
-    model.add(Dense(10, activation='softmax'))
-    model.compile(optimizers.RMSprop(lr=0.005, decay=1e-6),loss="categorical_crossentropy",metrics=["accuracy"])
+    model.add(Dense(8, activation='softmax'))
+    
+    model.compile(optimizers.RMSprop(lr=0.005, decay=1e-6), loss="categorical_crossentropy",
+                  metrics=["accuracy"])
 
     if show_summary:
         model.summary()
     
     return model
+
+# seems to overfit.
+# Categorical Accuracy = .7
+def create_model_v11(show_summary=False):
+    model = Sequential()
+    model.add(Conv2D(32, (8, 8), padding='same', input_shape=(16,16,3)))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (8, 8)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(64, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Conv2D(128, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Flatten())
+    model.add(Dense(512))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(8, activation='softmax'))
+    
+    model.compile(optimizers.RMSprop(lr=0.0005, decay=1e-5), loss="categorical_crossentropy",
+                  metrics=["categorical_accuracy"])
+    
+    if show_summary:
+        model.summary()
+    
+    return model
+
+def create_model_v12(show_summary=False):
+    model = Sequential()
+    model.add(Conv2D(32, (8, 8), padding='same', input_shape=(16,16,3)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(64, (8, 8)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(64, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(64, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(64, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Conv2D(128, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Flatten())
+    model.add(Dense(512))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(8, activation='softmax'))
+    
+    model.compile(optimizers.RMSprop(lr=0.0005, decay=1e-4), loss="categorical_crossentropy",
+                  metrics=["categorical_accuracy"])
+    
+    if show_summary:
+        model.summary()
+    
+    return model
+
+# Loading checkpoint:  saved_models/weights.best.v13_1.hdf5
+## Loss:  0.9755629178355721  Categorical Accuracy:  0.7147059
+## Total test records: 340
+## Number of correct: 243
+## Percent correct: 0.7147058823529412
+def create_model_v13(show_summary=False):
+    model = Sequential()
+    model.add(Conv2D(32, (8, 8), padding='same', input_shape=(16,16,3)))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (8, 8)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(64, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Conv2D(128, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(128, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Flatten())
+    model.add(Dense(512))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(8, activation='softmax'))
+    
+    model.compile(optimizers.RMSprop(lr=0.0005, decay=1e-5), loss="categorical_crossentropy",
+                  metrics=["categorical_accuracy"])
+    
+    if show_summary:
+        model.summary()
+    
+    return model
+
+# Loading checkpoint:  saved_models/weights.best.v14_1.hdf5
+## Loss:  1.0673524526988758  Categorical Accuracy:  0.6647059
+## Total test records: 340
+## Number of correct: 226
+## Percent correct: 0.6647058823529411
+def create_model_v14(show_summary=False):
+    model = Sequential()
+    model.add(Conv2D(32, (8, 8), padding='same', input_shape=(16,16,3)))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (8, 8)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(64, (5, 5), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Conv2D(128, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(128, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(128, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Flatten())
+    model.add(Dense(512))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(8, activation='softmax'))
+    
+    model.compile(optimizers.RMSprop(lr=0.0005, decay=1e-5), loss="categorical_crossentropy",
+                  metrics=["categorical_accuracy"])
+    
+    if show_summary:
+        model.summary()
+    
+    return model
+
+# Loading checkpoint:  saved_models/weights.best.v15_1.hdf5
+## Loss:  0.9298041936229257  Categorical Accuracy:  0.7352941
+## Total test records: 340
+## Number of correct: 250
+## Percent correct: 0.7352941176470589
+def create_model_v15(show_summary=False):
+    model = Sequential()
+    model.add(Conv2D(32, (8, 8), padding='same', input_shape=(21,20,3)))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (8, 8)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.25))
+    model.add(Conv2D(64, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Conv2D(64, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Conv2D(128, (3, 3), padding='same'))
+    model.add(Activation('relu'))
+    model.add(Conv2D(128, (3, 3)))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Flatten())
+    model.add(Dense(512))
+    model.add(Activation('relu'))
+    model.add(Dropout(0.5))
+    model.add(Dense(8, activation='softmax'))
+    
+    model.compile(optimizers.RMSprop(lr=0.0005, decay=1e-5), loss="categorical_crossentropy",
+                  metrics=["categorical_accuracy"])
+    
+    if show_summary:
+        model.summary()
+    
+    return model
+
+def create_output_model(model, layer_indexes, show_summary=False):
+    outs = [model.layers[cnt].output for cnt in layer_indexes]
+    print('output layers')
+    [print('-', out) for out in outs]
+    ret_mod = Model(inputs=model.inputs, outputs=outs)
+    if show_summary:
+        ret_mod.summary()
+    return ret_mod
